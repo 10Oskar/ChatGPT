@@ -1,6 +1,8 @@
 # ChatGPT
 
 This repository contains a simple demand forecasting tool implemented in pure Python.
+It also includes a prototype **Digital Twin platform** demonstrating a modular
+architecture for simulation and machine-learning driven decision support.
 
 ## Overview
 
@@ -24,6 +26,23 @@ python demand_forecasting.py path/to/data.csv -w 3
 
 This will output the forecast for the next period based on the moving average of the
 last `w` data points.
+
+## Digital Twin Prototype
+
+The `digital_twin` package bundles a simplified implementation of the
+"self-learning Digital Twin" outlined in the program specification. It provides
+stubs for data ingestion, hybrid modelling, reinforcement learning and
+decision intelligence.
+
+Instantiate the platform as follows:
+
+```python
+from digital_twin import DigitalTwinPlatform
+
+dt = DigitalTwinPlatform()
+dt.data_fabric.add_source("example_source")
+dt.replay_history()
+```
 
 ## Tests
 
