@@ -9,7 +9,13 @@ computes a forecast for the next period using a moving average method.
 
 ## Usage
 
-1. Prepare a CSV file containing one numeric demand value per line.
+1. Prepare a CSV file containing one numeric demand value per line. You can
+   generate a sample dataset using the `generate_fake_data.py` script:
+
+   ```bash
+   python generate_fake_data.py output.csv -n 10 --seed 1
+   ```
+
 2. Run the forecaster specifying the path to the CSV file and (optionally) the window size:
 
 ```bash
