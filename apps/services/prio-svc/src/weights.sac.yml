@@ -1,0 +1,10 @@
+role: SAC
+criteria:
+  ContractTier: 1
+  Criticality: 0.8
+  DelayIterations: 0.6
+  AgingDays: 0.5
+  EtaDelta: 0.4
+  CustomerSegment: 0.3
+  ExpediteCost: -0.2
+  Co2Delta: -0.1

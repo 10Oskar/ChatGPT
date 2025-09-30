@@ -1,0 +1,19 @@
+id: carrier-strike-switch
+name: Carrier Strike at Hub → Switch Provider for Urgent Orders
+preconditions:
+  - type: AlertType
+    value: ExternalRisk
+  - type: CarrierStatus
+    value: Strike
+steps:
+  - description: Contact alternate carrier pool
+    etaImpactHours: -6
+    costImpactUsd: 1200
+    co2ImpactKg: 30
+  - description: Update transport plan in TMS
+    etaImpactHours: -2
+    costImpactUsd: 200
+    co2ImpactKg: 10
+outcomes:
+  customerNotice: true
+  requiresApproval: false

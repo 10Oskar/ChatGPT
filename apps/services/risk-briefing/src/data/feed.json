@@ -1,0 +1,16 @@
+[
+  {
+    "id": "news-1",
+    "title": "Carrier strike announced at Frankfurt",
+    "geography": "DE",
+    "category": "transport",
+    "severity": "high"
+  },
+  {
+    "id": "news-2",
+    "title": "Volcanic ash impacting flights in Iceland",
+    "geography": "IS",
+    "category": "weather",
+    "severity": "medium"
+  }
+]

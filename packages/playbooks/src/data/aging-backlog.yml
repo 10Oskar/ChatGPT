@@ -1,0 +1,17 @@
+id: aging-backlog-sac
+name: Aging Backlog → SAC Hot-List Outreach Script
+preconditions:
+  - type: AlertType
+    value: Aging
+steps:
+  - description: Prioritise backlog orders using AHP weights
+    etaImpactHours: -4
+    costImpactUsd: 0
+    co2ImpactKg: 0
+  - description: Trigger SAC outreach template
+    etaImpactHours: 0
+    costImpactUsd: 0
+    co2ImpactKg: 0
+outcomes:
+  customerNotice: true
+  requiresApproval: false

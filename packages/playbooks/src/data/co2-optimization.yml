@@ -1,0 +1,17 @@
+id: co2-optimization-green-route
+name: CO₂ Optimisation → Shift to Lower Emission Route
+preconditions:
+  - type: SustainabilityFlag
+    value: High
+steps:
+  - description: Evaluate alternate carrier emissions via utility model
+    etaImpactHours: 2
+    costImpactUsd: 80
+    co2ImpactKg: -150
+  - description: Obtain customer approval for revised ETA
+    etaImpactHours: 0
+    costImpactUsd: 0
+    co2ImpactKg: 0
+outcomes:
+  customerNotice: true
+  requiresApproval: true

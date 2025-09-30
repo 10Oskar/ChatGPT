@@ -1,0 +1,17 @@
+id: customs-stalled-broker
+name: Customs Stalled → Broker Escalation + Customer Pre-notice
+preconditions:
+  - type: AlertType
+    value: Customs
+steps:
+  - description: Escalate to customs broker with additional paperwork
+    etaImpactHours: -12
+    costImpactUsd: 400
+    co2ImpactKg: 0
+  - description: Send proactive notification to customer
+    etaImpactHours: 0
+    costImpactUsd: 50
+    co2ImpactKg: 0
+outcomes:
+  customerNotice: true
+  requiresApproval: false

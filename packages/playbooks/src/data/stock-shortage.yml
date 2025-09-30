@@ -1,0 +1,17 @@
+id: stock-shortage-reallocate
+name: Stock Shortage → Reallocate per Contract Tier + Criticality
+preconditions:
+  - type: AlertType
+    value: Inventory
+steps:
+  - description: Run pegging engine with contract tier precedence
+    etaImpactHours: -8
+    costImpactUsd: 0
+    co2ImpactKg: 0
+  - description: Notify impacted lower-tier customers with mitigation options
+    etaImpactHours: 0
+    costImpactUsd: 100
+    co2ImpactKg: 0
+outcomes:
+  customerNotice: true
+  requiresApproval: true

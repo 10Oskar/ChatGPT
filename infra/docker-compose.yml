@@ -1,0 +1,180 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sdt
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - '6379:6379'
+
+  prisma-migrate:
+    build:
+      context: ..
+      dockerfile: infra/service.Dockerfile
+      args:
+        SERVICE: packages/database
+    depends_on:
+      - postgres
+    command: ["pnpm", "--filter", "@sdt/database", "prisma", "migrate", "deploy"]
+
+  prisma-seed:
+    build:
+      context: ..
+      dockerfile: infra/service.Dockerfile
+      args:
+        SERVICE: packages/database
+    depends_on:
+      - prisma-migrate
+    command: ["pnpm", "--filter", "@sdt/database", "prisma", "db", "seed"]
+
+  cc-core:
+    build:
+      context: ..
+      dockerfile: infra/service.Dockerfile
+      args:
+        SERVICE: apps/services/cc-core
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/sdt
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev-secret
+      REQUEST_LOG_LEVEL: info
+    depends_on:
+      - prisma-seed
+      - redis
+    ports:
+      - '3000:3000'
+
+  prio-svc:
+    build:
+      context: ..
+      dockerfile: infra/service.Dockerfile
+      args:
+        SERVICE: apps/services/prio-svc
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/sdt
+    depends_on:
+      - prisma-seed
+    ports:
+      - '3001:3001'
+
+  wms-orchestrator:
+    build:
+      context: ..
+      dockerfile: infra/service.Dockerfile
+      args:
+        SERVICE: apps/services/wms-orchestrator
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/sdt
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - prisma-seed
+      - redis
+    ports:
+      - '3002:3002'
+
+  risk-briefing:
+    build:
+      context: ..
+      dockerfile: infra/service.Dockerfile
+      args:
+        SERVICE: apps/services/risk-briefing
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/sdt
+    depends_on:
+      - prisma-seed
+    ports:
+      - '3003:3003'
+
+  mdm-guardian:
+    build:
+      context: ..
+      dockerfile: infra/service.Dockerfile
+      args:
+        SERVICE: apps/services/mdm-guardian
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/sdt
+    depends_on:
+      - prisma-seed
+    ports:
+      - '3004:3004'
+
+  sap-adapter:
+    build:
+      context: ..
+      dockerfile: infra/service.Dockerfile
+      args:
+        SERVICE: apps/services/sap-adapter
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/sdt
+    depends_on:
+      - prisma-seed
+    ports:
+      - '3100:3100'
+
+  ewm-adapter:
+    build:
+      context: ..
+      dockerfile: infra/service.Dockerfile
+      args:
+        SERVICE: apps/services/ewm-adapter
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/sdt
+    depends_on:
+      - prisma-seed
+    ports:
+      - '3101:3101'
+
+  tms-adapter:
+    build:
+      context: ..
+      dockerfile: infra/service.Dockerfile
+      args:
+        SERVICE: apps/services/tms-adapter
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/sdt
+    depends_on:
+      - prisma-seed
+    ports:
+      - '3102:3102'
+
+  crm-adapter:
+    build:
+      context: ..
+      dockerfile: infra/service.Dockerfile
+      args:
+        SERVICE: apps/services/crm-adapter
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/sdt
+    depends_on:
+      - prisma-seed
+    ports:
+      - '3103:3103'
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/service.Dockerfile
+      args:
+        SERVICE: apps/web/command-centre
+    environment:
+      NEXT_PUBLIC_CC_CORE_URL: http://cc-core:3000
+      NEXT_PUBLIC_PRIO_URL: http://prio-svc:3001
+      NEXT_PUBLIC_WMS_URL: http://wms-orchestrator:3002
+    depends_on:
+      - cc-core
+      - prio-svc
+      - wms-orchestrator
+    ports:
+      - '3005:3000'
+
+volumes:
+  pgdata:
