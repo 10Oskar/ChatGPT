@@ -1,0 +1,58 @@
+openapi: 3.0.3
+info:
+  title: Command Centre API
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      summary: Healthcheck
+      responses:
+        '200':
+          description: OK
+  /orders/{confirmationNumber}:
+    get:
+      summary: Retrieve order lifecycle
+      parameters:
+        - in: path
+          name: confirmationNumber
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order lifecycle response
+  /alerts/active:
+    get:
+      summary: List active alerts with playbooks
+      responses:
+        '200':
+          description: Active alerts
+  /alerts/{id}/actions:
+    post:
+      summary: Apply recommended action
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Action applied
+  /peg/allocate:
+    post:
+      summary: Run pegging engine
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sku:
+                  type: string
+                quantity:
+                  type: number
+      responses:
+        '200':
+          description: Allocation result

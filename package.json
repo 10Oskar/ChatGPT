@@ -1,0 +1,18 @@
+{
+  "name": "surveillance-digital-twin",
+  "private": true,
+  "version": "1.0.0",
+  "packageManager": "pnpm@8.15.1",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "dev": "pnpm -r --filter ./apps/services/** run dev",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm -r run test",
+    "seed": "pnpm --filter @sdt/database prisma db seed",
+    "generate": "pnpm --filter @sdt/database prisma generate",
+    "format": "pnpm prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "3.1.0"
+  }
+}

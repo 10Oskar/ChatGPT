@@ -1,0 +1,17 @@
+id: partial-ship-maintenance
+name: Maintenance Event Partial Ship Approval
+preconditions:
+  - type: OrderType
+    value: Maintenance
+steps:
+  - description: Confirm minimum kit availability with pegging engine
+    etaImpactHours: -6
+    costImpactUsd: 0
+    co2ImpactKg: 0
+  - description: Notify maintenance planner of partial shipment
+    etaImpactHours: 0
+    costImpactUsd: 20
+    co2ImpactKg: 0
+outcomes:
+  customerNotice: true
+  requiresApproval: true

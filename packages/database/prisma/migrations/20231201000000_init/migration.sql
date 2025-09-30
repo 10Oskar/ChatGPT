@@ -1,0 +1,234 @@
+-- Prisma migration to create core tables
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TYPE "OrderStatus" AS ENUM ('CREATED','CONFIRMED','ALLOCATED','PICKING','SHIPPED','DELIVERED','CANCELLED');
+CREATE TYPE "ShipmentStatus" AS ENUM ('CREATED','IN_TRANSIT','CUSTOMS','DELIVERED','EXCEPTION');
+CREATE TYPE "AlertStatus" AS ENUM ('OPEN','ACKNOWLEDGED','RESOLVED');
+CREATE TYPE "AlertSeverity" AS ENUM ('LOW','MEDIUM','HIGH','CRITICAL');
+
+CREATE TABLE "Role" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "code" TEXT NOT NULL UNIQUE,
+  "name" TEXT NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "User" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "email" TEXT NOT NULL UNIQUE,
+  "name" TEXT NOT NULL,
+  "roleId" UUID NOT NULL REFERENCES "Role"("id"),
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "deletedAt" TIMESTAMP
+);
+
+CREATE TABLE "Market" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "code" TEXT NOT NULL UNIQUE,
+  "name" TEXT NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Facility" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "code" TEXT NOT NULL UNIQUE,
+  "name" TEXT NOT NULL,
+  "type" TEXT NOT NULL,
+  "marketId" UUID NOT NULL REFERENCES "Market"("id"),
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Customer" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "name" TEXT NOT NULL,
+  "marketId" UUID NOT NULL REFERENCES "Market"("id"),
+  "externalRef" TEXT,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Supplier" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "name" TEXT NOT NULL,
+  "externalRef" TEXT,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Carrier" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "name" TEXT NOT NULL,
+  "mode" TEXT NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Order" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "customerId" UUID NOT NULL REFERENCES "Customer"("id"),
+  "supplierId" UUID REFERENCES "Supplier"("id"),
+  "status" "OrderStatus" NOT NULL DEFAULT 'CREATED',
+  "externalRef" TEXT,
+  "confirmationNumber" TEXT NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "deletedAt" TIMESTAMP
+);
+
+CREATE TABLE "OrderLine" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "orderId" UUID NOT NULL REFERENCES "Order"("id") ON DELETE CASCADE,
+  "sku" TEXT NOT NULL,
+  "description" TEXT NOT NULL,
+  "quantity" INTEGER NOT NULL,
+  "allocatedQuantity" INTEGER NOT NULL DEFAULT 0,
+  "requiredDate" TIMESTAMP NOT NULL,
+  "externalRef" TEXT,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Inventory" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "facilityId" UUID NOT NULL REFERENCES "Facility"("id"),
+  "supplierId" UUID REFERENCES "Supplier"("id"),
+  "sku" TEXT NOT NULL,
+  "description" TEXT NOT NULL,
+  "quantity" INTEGER NOT NULL,
+  "safetyStock" INTEGER NOT NULL,
+  "externalRef" TEXT,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "PegAllocation" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "orderLineId" UUID NOT NULL REFERENCES "OrderLine"("id") ON DELETE CASCADE,
+  "inventoryId" UUID NOT NULL REFERENCES "Inventory"("id"),
+  "quantity" INTEGER NOT NULL,
+  "ruleId" TEXT NOT NULL,
+  "reasons" TEXT NOT NULL,
+  "impactNotes" TEXT,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Shipment" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "orderId" UUID NOT NULL REFERENCES "Order"("id") ON DELETE CASCADE,
+  "carrierId" UUID NOT NULL REFERENCES "Carrier"("id"),
+  "facilityId" UUID NOT NULL REFERENCES "Facility"("id"),
+  "status" "ShipmentStatus" NOT NULL DEFAULT 'CREATED',
+  "eta" TIMESTAMP,
+  "externalRef" TEXT,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "ShipmentEvent" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "shipmentId" UUID NOT NULL REFERENCES "Shipment"("id") ON DELETE CASCADE,
+  "status" "ShipmentStatus" NOT NULL,
+  "location" TEXT,
+  "occurredAt" TIMESTAMP NOT NULL,
+  "notes" TEXT,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Playbook" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "code" TEXT NOT NULL UNIQUE,
+  "name" TEXT NOT NULL,
+  "summary" TEXT NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Action" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "alertId" UUID REFERENCES "Alert"("id"),
+  "name" TEXT NOT NULL,
+  "status" TEXT NOT NULL,
+  "assignedTo" TEXT,
+  "executedAt" TIMESTAMP,
+  "notes" TEXT,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Alert" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "orderId" UUID REFERENCES "Order"("id"),
+  "ownerId" UUID REFERENCES "User"("id"),
+  "status" "AlertStatus" NOT NULL DEFAULT 'OPEN',
+  "severity" "AlertSeverity" NOT NULL DEFAULT 'MEDIUM',
+  "type" TEXT NOT NULL,
+  "description" TEXT NOT NULL,
+  "actionId" UUID REFERENCES "Action"("id"),
+  "playbookId" TEXT,
+  "raisedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "resolutionDue" TIMESTAMP,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE "Action" ADD CONSTRAINT "Action_alertId_fkey" FOREIGN KEY ("alertId") REFERENCES "Alert"("id") ON DELETE SET NULL;
+
+CREATE TABLE "KPIReading" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "name" TEXT NOT NULL,
+  "value" DOUBLE PRECISION NOT NULL,
+  "weight" DOUBLE PRECISION NOT NULL,
+  "capturedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "ShipmentOutbox" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "eventType" TEXT NOT NULL,
+  "payload" JSONB NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "processedAt" TIMESTAMP
+);
+
+CREATE TABLE "AlertOutbox" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "eventType" TEXT NOT NULL,
+  "payload" JSONB NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "processedAt" TIMESTAMP
+);
+
+CREATE TABLE "MasterDataIssue" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "entityType" TEXT NOT NULL,
+  "entityId" TEXT NOT NULL,
+  "field" TEXT NOT NULL,
+  "description" TEXT NOT NULL,
+  "ownerId" UUID REFERENCES "User"("id"),
+  "status" TEXT NOT NULL DEFAULT 'OPEN',
+  "slaDue" TIMESTAMP,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "WhatIfScenario" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "name" TEXT NOT NULL,
+  "parameters" JSONB NOT NULL,
+  "promoted" BOOLEAN NOT NULL DEFAULT FALSE,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "AlertAudit" (
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "alertId" UUID NOT NULL REFERENCES "Alert"("id") ON DELETE CASCADE,
+  "message" TEXT NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "userId" UUID
+);
+

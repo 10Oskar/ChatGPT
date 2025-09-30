@@ -1,0 +1,300 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  CREATED
+  CONFIRMED
+  ALLOCATED
+  PICKING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum ShipmentStatus {
+  CREATED
+  IN_TRANSIT
+  CUSTOMS
+  DELIVERED
+  EXCEPTION
+}
+
+enum AlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  alerts    Alert[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+}
+
+model Role {
+  id        String  @id @default(uuid())
+  code      String  @unique
+  name      String
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  marketId  String
+  market    Market   @relation(fields: [marketId], references: [id])
+  externalRef String?
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Supplier {
+  id        String   @id @default(uuid())
+  name      String
+  externalRef String?
+  shipments Shipment[]
+  inventories Inventory[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Market {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  facilities Facility[]
+  customers Customer[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Facility {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  type      String
+  marketId  String
+  market    Market   @relation(fields: [marketId], references: [id])
+  shipments Shipment[]
+  inventories Inventory[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Carrier {
+  id        String   @id @default(uuid())
+  name      String
+  mode      String
+  shipments Shipment[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  customerId  String
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  supplierId  String?
+  supplier    Supplier?   @relation(fields: [supplierId], references: [id])
+  status      OrderStatus @default(CREATED)
+  externalRef String?
+  confirmationNumber String
+  orderLines  OrderLine[]
+  shipments   Shipment[]
+  alerts      Alert[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+}
+
+model OrderLine {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id])
+  sku         String
+  description String
+  quantity    Int
+  allocatedQuantity Int  @default(0)
+  requiredDate DateTime
+  externalRef String?
+  pegAllocations PegAllocation[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Inventory {
+  id          String   @id @default(uuid())
+  facilityId  String
+  facility    Facility @relation(fields: [facilityId], references: [id])
+  supplierId  String?
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+  sku         String
+  description String
+  quantity    Int
+  safetyStock Int
+  externalRef String?
+  pegAllocations PegAllocation[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PegAllocation {
+  id            String   @id @default(uuid())
+  orderLineId   String
+  orderLine     OrderLine @relation(fields: [orderLineId], references: [id])
+  inventoryId   String
+  inventory     Inventory @relation(fields: [inventoryId], references: [id])
+  quantity      Int
+  ruleId        String
+  reasons       String
+  impactNotes   String?
+  createdAt     DateTime @default(now())
+}
+
+model Shipment {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id])
+  carrierId   String
+  carrier     Carrier  @relation(fields: [carrierId], references: [id])
+  facilityId  String
+  facility    Facility @relation(fields: [facilityId], references: [id])
+  status      ShipmentStatus @default(CREATED)
+  eta         DateTime?
+  externalRef String?
+  events      ShipmentEvent[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ShipmentEvent {
+  id          String   @id @default(uuid())
+  shipmentId  String
+  shipment    Shipment @relation(fields: [shipmentId], references: [id])
+  status      ShipmentStatus
+  location    String?
+  occurredAt  DateTime
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+model Alert {
+  id          String   @id @default(uuid())
+  orderId     String?
+  order       Order?   @relation(fields: [orderId], references: [id])
+  ownerId     String?
+  owner       User?    @relation(fields: [ownerId], references: [id])
+  status      AlertStatus @default(OPEN)
+  severity    AlertSeverity @default(MEDIUM)
+  type        String
+  description String
+  actionId    String?
+  action      Action?  @relation(fields: [actionId], references: [id])
+  playbookId  String?
+  raisedAt    DateTime @default(now())
+  resolutionDue DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Action {
+  id          String   @id @default(uuid())
+  alert       Alert?
+  alertId     String?
+  name        String
+  status      String
+  assignedTo  String?
+  executedAt  DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Playbook {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  summary     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  actions     Action[]
+}
+
+model KPIReading {
+  id          String   @id @default(uuid())
+  name        String
+  value       Float
+  weight      Float
+  capturedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
+
+model ShipmentOutbox {
+  id          String   @id @default(uuid())
+  eventType   String
+  payload     Json
+  createdAt   DateTime @default(now())
+  processedAt DateTime?
+}
+
+model AlertOutbox {
+  id          String   @id @default(uuid())
+  eventType   String
+  payload     Json
+  createdAt   DateTime @default(now())
+  processedAt DateTime?
+}
+
+model MasterDataIssue {
+  id          String   @id @default(uuid())
+  entityType  String
+  entityId    String
+  field       String
+  description String
+  ownerId     String?
+  owner       User?    @relation(fields: [ownerId], references: [id])
+  status      String   @default("OPEN")
+  slaDue      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model WhatIfScenario {
+  id          String   @id @default(uuid())
+  name        String
+  parameters  Json
+  promoted    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AlertAudit {
+  id          String   @id @default(uuid())
+  alertId     String
+  alert       Alert    @relation(fields: [alertId], references: [id])
+  message     String
+  createdAt   DateTime @default(now())
+  userId      String?
+}

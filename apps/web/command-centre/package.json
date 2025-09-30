@@ -1,0 +1,28 @@
+{
+  "name": "command-centre-web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "next": "14.0.2",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@tanstack/react-query": "4.35.0",
+    "@sdt/shared": "1.0.0",
+    "@sdt/playbooks": "1.0.0",
+    "swr": "2.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "20.8.10",
+    "@types/react": "18.2.24",
+    "@types/react-dom": "18.2.11",
+    "typescript": "5.3.3",
+    "playwright": "1.39.0"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "@sdt/playbooks",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && cp -r src/data dist/data",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "yaml": "2.3.4",
+    "zod": "3.22.4",
+    "@sdt/shared": "1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "5.3.3",
+    "vitest": "0.34.6",
+    "@types/node": "20.8.10",
+    "eslint": "8.54.0",
+    "@typescript-eslint/parser": "6.12.0",
+    "@typescript-eslint/eslint-plugin": "6.12.0"
+  }
+}

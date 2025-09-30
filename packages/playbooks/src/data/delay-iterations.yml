@@ -1,0 +1,17 @@
+id: delay-iterations-guardrail
+name: Delay Iterations Guardrail → Fairness Check + Exec Escalation
+preconditions:
+  - type: DelayCount
+    value: '>2'
+steps:
+  - description: Review fairness guardrail scoreboard
+    etaImpactHours: 0
+    costImpactUsd: 0
+    co2ImpactKg: 0
+  - description: Escalate chronic delay to executive sponsor
+    etaImpactHours: -10
+    costImpactUsd: 150
+    co2ImpactKg: 0
+outcomes:
+  customerNotice: false
+  requiresApproval: false

@@ -1,0 +1,17 @@
+id: supplier-slippage-expedite
+name: Supplier Slippage → Expedite Alt Source
+preconditions:
+  - type: AlertType
+    value: Supplier
+steps:
+  - description: Check alternate supplier availability
+    etaImpactHours: -24
+    costImpactUsd: 1500
+    co2ImpactKg: 200
+  - description: Approve expedited freight
+    etaImpactHours: -12
+    costImpactUsd: 600
+    co2ImpactKg: 100
+outcomes:
+  customerNotice: true
+  requiresApproval: true
